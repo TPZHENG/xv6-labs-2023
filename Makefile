@@ -183,6 +183,8 @@ UPROGS=\
 	$U/_mkdir\
 	$U/_rm\
 	$U/_sh\
+	$U/_sleep\
+	$U/_pingpong\
 	$U/_stressfs\
 	$U/_usertests\
 	$U/_grind\
