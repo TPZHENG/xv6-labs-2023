@@ -101,7 +101,9 @@ extern uint64 sys_unlink(void);
 extern uint64 sys_link(void);
 extern uint64 sys_mkdir(void);
 extern uint64 sys_close(void);
+extern uint64 sys_trace(void);  // 新增系统调用实现
 
+// 这里的 [SYS_fork] sys_fork 是 C 语言数组的一个语法，表示以方括号内的值作为元素下标。比如 int arr[] = {[3] 2333, [6] 6666} 代表 arr 的下标 3 的元素为 2333，下标 6 的元素为 6666，其他元素填充 0 的数组。（该语法在 C++ 中已不可用)
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
 static uint64 (*syscalls[])(void) = {
@@ -126,22 +128,52 @@ static uint64 (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
+[SYS_trace]   sys_trace,
+};
+
+//void
+//syscall(void)
+//{
+//  int num;
+//  struct proc *p = myproc();
+//
+//  num = p->trapframe->a7;
+//  if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
+//    // Use num to lookup the system call function for num, call it,
+//    // and store its return value in p->trapframe->a0
+//    p->trapframe->a0 = syscalls[num]();
+//  } else {
+//    printf("%d %s: unknown sys call %d\n",
+//            p->pid, p->name, num);
+//    p->trapframe->a0 = -1;
+//  }
+//}
+
+
+
+const static char *syscall_names[] = {
+  "fork", "exit", "wait", "pipe", "read", "kill", "exec", "fstat", "chdir", "dup",
+  "getpid", "sbrk", "sleep", "uptime", "open", "write", "mknod", "unlink", "link",
+  "mkdir", "close", "trace", "sysinfo"
 };
 
 void
 syscall(void)
 {
-  int num;
-  struct proc *p = myproc();
-
-  num = p->trapframe->a7;
-  if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
-    // Use num to lookup the system call function for num, call it,
-    // and store its return value in p->trapframe->a0
-    p->trapframe->a0 = syscalls[num]();
-  } else {
-    printf("%d %s: unknown sys call %d\n",
-            p->pid, p->name, num);
-    p->trapframe->a0 = -1;
-  }
+    int num;
+    struct proc *p = myproc();  // myproc() 会给出当前调用系统调用的进程
+    num = p->trapframe->a7;     // 当前进程希望调用的系统调用
+    if (num > 0 && num < NELEM(syscalls) && syscalls[num]) {
+        p->trapframe->a0 = syscalls[num](); // 通过 num 找到需要调用哪个函数
+        // 这个 a0 储存了系统调用的返回值
+        int trace_mask = p->trace_mask;     // 检查这个进程的 trace mask
+        if ((trace_mask >> num) & 1) {      // 如果当前这个系统调用是进程希望追踪的，那就输出
+          // 3: syscall read -> 1023 是 lab 中要求的格式，所以我们也按照这个格式输出
+          // 这里的 3 是进程号，read 是调用的系统调用的名字，1023 是调用过后的返回值。
+          printf("%d: syscall %s -> %d\n", p->pid, syscall_names[num - 1], p->trapframe->a0);
+        }
+    } else {
+        printf("%d %s: unknown sys call %d\n", p->pid, p->name, num);
+        p->trapframe->a0 = -1;
+    }
 }

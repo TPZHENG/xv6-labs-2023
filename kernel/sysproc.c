@@ -91,3 +91,21 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// 新增，参考：https://ttzytt.com/2022/07/xv6_lab2_record/index.html
+uint64
+sys_trace(void)
+{
+  int mask;
+  // 进行这个系统调用的进程
+  struct proc *p = myproc();
+  // 从用户态获取该系统调用的第0个32位参数
+  argint(0, &mask);
+  if(mask < 0) {
+    return -1;
+  }
+  p->trace_mask = mask;
+  return 0;
+}
+
+

@@ -169,6 +169,8 @@ freeproc(struct proc *p)
   p->killed = 0;
   p->xstate = 0;
   p->state = UNUSED;
+  
+  p->trace_mask = 0;  // 进程退出时，清空需要trace的系统调用的掩码, 防止该进程号分配给其他程序后，会继续输出被trace的系统调用
 }
 
 // Create a user page table for a given process, with no user memory,
@@ -301,6 +303,9 @@ fork(void)
 
   // Cause fork to return 0 in the child.
   np->trapframe->a0 = 0;
+
+   // 复制 trace mask, 为满足子进程继续trace该系统调用
+  np->trace_mask = p->trace_mask;
 
   // increment reference counts on open file descriptors.
   for(i = 0; i < NOFILE; i++)
