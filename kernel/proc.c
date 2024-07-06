@@ -691,3 +691,20 @@ procdump(void)
     printf("\n");
   }
 }
+
+
+uint
+get_proc_cnt(){
+  struct proc* cur_proc;
+  //proc 是一个数组，定义为：struct proc proc[NPROC];
+  uint ret = 0;
+
+  // proc 在procinit中被初始化
+  for(cur_proc = proc; cur_proc < &proc[NPROC]; cur_proc++){
+    acquire(&cur_proc->lock);
+    if(cur_proc->state != UNUSED)
+      ret++; // 如果这个进程是正在使用的
+    release(&cur_proc->lock);
+  }
+  return ret;
+}

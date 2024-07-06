@@ -21,3 +21,4 @@
 #define SYS_mkdir  20
 #define SYS_close  21
 #define SYS_trace  22  // 给新增的系统调用trace注册一个调用号
+#define SYS_sysinfo 23

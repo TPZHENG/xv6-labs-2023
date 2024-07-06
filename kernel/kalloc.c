@@ -80,3 +80,17 @@ kalloc(void)
     memset((char*)r, 5, PGSIZE); // fill with junk
   return (void*)r;
 }
+
+uint64
+get_fremem(){
+  // 返回空闲内存，用字节作为单位
+  uint64 ret = 0;
+  acquire(&kmem.lock); // 先加锁, kmem是全局变量，在kinit被初始化
+  struct run *free_pagelist = kmem.freelist;
+  while(free_pagelist){ // 遍历这个链表
+    free_pagelist = free_pagelist->next;
+    ret++;
+  }
+  release(&kmem.lock);
+  return ret * PGSIZE; // 返回时，需要乘以一个页的大小
+}

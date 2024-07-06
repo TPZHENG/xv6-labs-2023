@@ -5,6 +5,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "sysinfo.h"
 
 uint64
 sys_exit(void)
@@ -109,3 +110,18 @@ sys_trace(void)
 }
 
 
+uint64
+sys_sysinfo(){
+  struct sysinfo info;
+  struct proc *cur_proc = myproc();
+  uint64 usr_addr;
+
+  info.freemem = get_fremem(); // 这两行是获取系统信息
+  info.nproc = get_proc_cnt();
+
+  argaddr(0, &usr_addr); // 记录用户态的 sysinfo 地址
+
+  if(copyout(cur_proc->pagetable, usr_addr, (char *)&info, sizeof(info)) < 0)
+    return -1;
+  return 0;
+}
