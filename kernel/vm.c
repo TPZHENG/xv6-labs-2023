@@ -449,3 +449,47 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
     return -1;
   }
 }
+
+
+void
+vmprint(pagetable_t pagetable, uint dep){
+  if(dep == 0)
+    printf("page table %p\n", pagetable);
+  for(int i = 0; i < 512; i++){
+    pte_t pte = pagetable[i];
+    if(pte & PTE_V){
+      for(int j = 0; j < dep; j++)
+        printf(".. ");
+      uint64 child = PTE2PA(pte);
+      printf("..%d: pte %p pa %p\n", i, pte, child);
+      if(dep < 2)
+        // 如果层数等于 2 就不需要继续递归了，因为这是叶子节点
+        vmprint((pagetable_t) child, dep + 1);
+    }
+  }
+}
+
+static int printdeep = 0;
+
+void
+vmprint2(pagetable_t pagetable)
+{
+  if (printdeep == 0)
+    printf("page table %p\n", (uint64)pagetable);
+  for (int i = 0; i < 512; i++) {
+    pte_t pte = pagetable[i];
+    if (pte & PTE_V) {
+      for (int j = 0; j <= printdeep; j++) {
+        printf("..");
+      }
+      printf("%d: pte %p pa %p\n", i, (uint64)pte, (uint64)PTE2PA(pte));
+    }
+    // pintes to lower-level page table
+    if((pte & PTE_V) && (pte & (PTE_R|PTE_W|PTE_X)) == 0){
+      printdeep++;
+      uint64 child_pa = PTE2PA(pte);
+      vmprint2((pagetable_t)child_pa);
+      printdeep--;
+    }
+  }
+}
