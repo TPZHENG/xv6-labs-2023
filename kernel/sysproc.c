@@ -75,6 +75,29 @@ int
 sys_pgaccess(void)
 {
   // lab pgtbl: your code here.
+  pagetable_t u_pt = myproc()->pagetable;
+  uint64 fir_addr, mask_addr;
+  int ck_siz;
+  int mask = 0;
+  argaddr(0, &fir_addr);
+  argint(1, &ck_siz);
+  argaddr(2, &mask_addr);
+
+  if(ck_siz > 32){
+      return -1;
+  }
+
+  pte_t* fir_pte = walk(u_pt, fir_addr, 0);
+
+  for(int i = 0; i < ck_siz; i++){
+      if((fir_pte[i] & PTE_A) && (fir_pte[i] & PTE_V)){
+          mask |= (1 << i);
+          fir_pte[i] ^= PTE_A; // 复位
+      }
+  }
+
+  copyout(u_pt, mask_addr, (char *)&mask, sizeof(uint));
+
   return 0;
 }
 #endif
